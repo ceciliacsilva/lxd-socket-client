@@ -1,0 +1,16 @@
+[package]
+name = "lxc-rusty"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+http = "1.4.0"
+http-body-util = "0.1.3"
+hyper = { version = "1.9.0", features = ["client", "http1"] }
+hyper-util = { version = "0.1.20", features = ["tokio"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+tracing = { version = "0.1.44", features = ["async-await"] }
+tracing-subscriber = { version = "0.3.23", features = ["registry", "env-filter"] }
