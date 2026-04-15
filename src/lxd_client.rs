@@ -36,10 +36,16 @@ impl SocketClient {
     #[tracing::instrument]
     pub async fn connect(self) -> Result<SendableClient> {
         let stream = UnixStream::connect(&self.socket_path).await?;
-        // Just a hyper wrapper over a tokio stream.
+        // Just a hyper wrapper over a tokio stream. Needed for type
+        // compartibility.
         let hyper_stream = hyper_util::rt::TokioIo::new(stream);
 
         let (sender, connection) = http1::handshake(hyper_stream).await?;
+        // Note that `connection` needs to be await or `SendRequest` won't
+        // do anything.
+        // Refs:
+        //   - https://github.com/hyperium/hyper/blob/master/src/client/conn/http1.rs#L512
+        //   - https://github.com/hyperium/hyper/blob/master/src/client/conn/http1.rs#L49
         tokio::task::spawn(async move {
             match connection.await {
                 Ok(_) => info!("Connection to socket finished."),
@@ -61,6 +67,7 @@ impl SendableClient {
     }
 
     /// Run `GET` requests.
+    // XXX: A `make_post_request` would need to handle non `Empty<Bytes>` body.
     async fn make_get_request<B: DeserializeOwned + std::fmt::Debug>(
         &mut self,
         request: Request<Empty<Bytes>>,
@@ -94,7 +101,7 @@ impl LxdCommand for SendableClient {
         let uri = Uri::from_str(&format!("{}/images", LXD_BASE_URL))?;
         debug!("URI: {uri:?}");
 
-        let authority = uri.authority().ok_or(anyhow::anyhow!("oi"))?.to_string();
+        let authority = uri.authority().ok_or(anyhow::anyhow!("localhost"))?.to_string();
 
         let request = Request::builder()
             .uri(uri)
@@ -111,7 +118,7 @@ impl LxdCommand for SendableClient {
         let uri = Uri::from_str(&format!("{}/cluster", LXD_BASE_URL))?;
         debug!("URI: {uri:?}");
 
-        let authority = uri.authority().ok_or(anyhow::anyhow!("oi"))?.to_string();
+        let authority = uri.authority().ok_or(anyhow::anyhow!("localhost"))?.to_string();
 
         let request = Request::builder()
             .uri(uri)

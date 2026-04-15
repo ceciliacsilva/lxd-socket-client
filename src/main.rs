@@ -11,6 +11,9 @@ async fn main() {
         .with_max_level(tracing::Level::TRACE)
         .init();
 
+    // Just a simple test:
+    //  - one task listing images and cluster;
+    //  - another one listeing cluster.
     let h1 = tokio::spawn(async move {
         let mut sock = SocketClient::default().connect().await.unwrap();
         let images = sock.list_images().await;
